@@ -229,7 +229,11 @@ async function main() {
         browser = await puppeteer.launch({
             executablePath: browserPath,
             headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
+            args: [
+                '--disable-web-security=false',
+                '--disable-background-networking',
+                '--disable-default-apps'
+            ]
         });
     } catch (err) {
         console.error('【エラー】ブラウザの起動に失敗しました:', err.message);
@@ -288,16 +292,45 @@ async function main() {
                 continue;
             }
 
-            const xslFile = xslMatch[1];
-            const xslFullPath = path.join(extractFolder, xslFile);
+            const xslFile = xslMatch[1].trim();
+            // セキュリティ対策: ディレクトリトラバーサル・絶対パス・UNCパスの検証
+            const normalizedXsl = path.normalize(xslFile);
+            const xslFullPath = path.resolve(extractFolder, normalizedXsl);
+            const relXslPath = path.relative(extractFolder, xslFullPath);
+
+            if (relXslPath.startsWith('..') || path.isAbsolute(relXslPath) || /^[a-zA-Z]:/.test(xslFile) || xslFile.startsWith('\\\\')) {
+                console.log(`  -> 【警告】スタイルシートのパス指定が不正です（トラバーサル検知）: ${xslFile}`);
+                failCount++;
+                continue;
+            }
+
+            if (!fs.existsSync(xslFullPath) || !fs.statSync(xslFullPath).isFile()) {
+                console.log(`  -> 指定されたスタイルシート (${xslFile}) が見つかりません。スキップします。`);
+                failCount++;
+                continue;
+            }
+
             const htmlFullPath = path.join(extractFolder, 'output.html');
 
             // XSLT compile & HTML render
             await transformXmlToHtml(xmlFullPath, xslFullPath, htmlFullPath);
 
             const page = await browser.newPage();
+
+            // セキュリティ対策: JavaScript実行の無効化および外部通信（SSRF/NTLM漏洩等）の完全遮断
+            await page.setJavaScriptEnabled(false);
+            await page.setRequestInterception(true);
+            page.on('request', req => {
+                const reqUrl = req.url();
+                if (reqUrl.startsWith('file:///') || reqUrl.startsWith('data:')) {
+                    req.continue();
+                } else {
+                    req.abort();
+                }
+            });
+
             const url = 'file:///' + htmlFullPath.replace(/\\/g, '/');
-            await page.goto(url, { waitUntil: 'networkidle0', timeout: 60000 });
+            await page.goto(url, { waitUntil: 'load', timeout: 60000 });
 
             // Layout customization
             let customCss = '';
@@ -394,7 +427,7 @@ async function main() {
                 fs.mkdirSync(item.outputDir, { recursive: true });
             }
 
-            const pdfFilename = mainXmlFile.replace(/\.xml$/i, '.pdf');
+            const pdfFilename = path.basename(mainXmlFile).replace(/\.xml$/i, '.pdf');
             const pdfPath = path.join(item.outputDir, pdfFilename);
 
             await page.pdf({
