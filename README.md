@@ -24,14 +24,26 @@ e-Gov（電子政府の総合窓口）からダウンロードされた電子送
 
 ---
 
+## 📥 ダウンロードと準備
+
+一般的なご利用の場合は、ビルド済みの実行ファイル（EXE）をダウンロードするだけで、Node.js などのインストール不要でそのまま使えます。
+
+1. [GitHub Releases (v1.0.0)](https://github.com/jobconnections/denshi-soutatsu-toPDF/releases/tag/v1.0.0) から最新の **`denshi-soutatsu-pdf.exe`** をダウンロードします。
+2. お好みの作業フォルダに配置してください。
+
+---
+
 ## 🚀 使い方
 
 用途に合わせて、以下のいずれかの方法でご利用いただけます。
 
 ### 方法 1: ドラッグ＆ドロップで変換（一番簡単）
 1. 変換したい e-Gov の `ZIPファイル`（またはZIPファイルが入ったフォルダ）を選択します。
-2. `denshi-soutatsu-pdf.exe`（または `convert.bat`）のアイコン上に直接ドラッグ＆ドロップします。
+2. **`denshi-soutatsu-pdf.exe`** のアイコン上に直接ドラッグ＆ドロップします。
 3. 自動的に変換が実行され、対象フォルダ内に `output` フォルダが作成されてPDFが出力されます。
+
+> **💡 ヒント（リポジトリ／ソースコードからご利用の場合）:**  
+> ソースコード一式をクローンして利用している場合は、同一フォルダに `denshi-soutatsu-pdf.exe` または Node.js 環境があれば、付属の `convert.bat` へのドラッグ＆ドロップでも同様に実行できます。(`convert.bat` 単体では動作せず、同一階層に `denshi-soutatsu-pdf.exe` もしくは Node.js 実行環境と `index.js` が必要です)
 
 ### 方法 2: 同じフォルダに置いてダブルクリック
 1. `denshi-soutatsu-pdf.exe` を変換対象の ZIP ファイルと同じフォルダに配置します。
